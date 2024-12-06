@@ -9,6 +9,8 @@ body {
     margin: 0;
     padding: 0;
     background-color: #bfbfbf;
+    min-height: 100vh;
+  box-sizing: border-box;
   }
   
   #app {
@@ -241,3 +243,23 @@ body {
     object-fit: contain; /* 确保图片在容器内完整显示 */
   }
   
+  @media (max-width: 600px) {
+    /* 对于更小的屏幕 */
+    .toolbar-button {
+      font-size: 0.9rem; /* 缩小按钮字体 */
+    }
+  
+    #app {
+      max-width: 95%;
+      width: 100%;
+      margin: 10px;
+    }
+  
+    .window-bar {
+      font-size: 8pt;
+    }
+    #canvas {
+      max-width: 100%;
+      height: auto;
+    }
+  }

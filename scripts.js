@@ -375,4 +375,135 @@ document.addEventListener("keydown", (event) => {
   
     drawCanvas(); // 重绘画布以更新对象的位置
   });
-  
+  // 添加触摸事件监听器
+canvas.addEventListener("touchstart", handleTouchStart, false);
+canvas.addEventListener("touchmove", handleTouchMove, false);
+canvas.addEventListener("touchend", handleTouchEnd, false);
+
+// 处理触摸开始
+function handleTouchStart(e) {
+  e.preventDefault();
+  const touches = e.touches;
+
+  if (touches.length === 1) {
+    const { clientX, clientY } = touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const offsetX = clientX - rect.left;
+    const offsetY = clientY - rect.top;
+
+    selectedObject = null; // 先取消所有选中状态
+
+    objects.forEach((object) => {
+      if (isInsideObject(offsetX, offsetY, object)) {
+        selectedObject = object; // 如果点击在某个对象内，设为选中
+        drawCanvas(); // 重绘画布
+      }
+    });
+
+    if (selectedObject) {
+      // 判断是否点击在蓝色控制点上
+      if (isInsideResizeControl(offsetX, offsetY, selectedObject)) {
+        resizing = true; // 开始调整大小
+        resizeDirection = getResizeDirection(offsetX, offsetY, selectedObject); // 获取调整方向
+      } else {
+        dragging = true; // 开始拖动
+      }
+    }
+  }
+}
+
+// 处理触摸移动
+function handleTouchMove(e) {
+  e.preventDefault();
+  const touches = e.touches;
+
+  if (touches.length === 1) {
+    const { clientX, clientY } = touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const offsetX = clientX - rect.left;
+    const offsetY = clientY - rect.top;
+
+    if (resizing && selectedObject) {
+      // 如果在调整大小
+      resizeObject(offsetX, offsetY, selectedObject, resizeDirection);
+      drawCanvas();
+    } else if (dragging && selectedObject) {
+      // 如果在拖动
+      selectedObject.x = offsetX - selectedObject.width / 2;
+      selectedObject.y = offsetY - selectedObject.height / 2;
+      drawCanvas();
+    }
+  }
+}
+
+// 处理触摸结束
+function handleTouchEnd(e) {
+  e.preventDefault();
+  dragging = false;
+  resizing = false;
+  resizeDirection = null;
+}
+
+// 判断是否点击在调整大小的控制点上
+function isInsideResizeControl(x, y, object) {
+  const controls = getResizeControls(object);
+
+  return controls.some(
+    (control) =>
+      x > control.x - CONTROL_SIZE / 2 &&
+      x < control.x + CONTROL_SIZE / 2 &&
+      y > control.y - CONTROL_SIZE / 2 &&
+      y < control.y + CONTROL_SIZE / 2
+  );
+}
+
+// 获取调整大小的控制点
+function getResizeControls(object) {
+  return [
+    { x: object.x, y: object.y }, // 左上
+    { x: object.x + object.width, y: object.y }, // 右上
+    { x: object.x, y: object.y + object.height }, // 左下
+    { x: object.x + object.width, y: object.y + object.height }, // 右下
+  ];
+}
+
+// 获取调整的方向
+function getResizeDirection(x, y, object) {
+  const controls = getResizeControls(object);
+
+  if (Math.abs(x - controls[0].x) < CONTROL_SIZE && Math.abs(y - controls[0].y) < CONTROL_SIZE) {
+    return "top-left"; // 左上角
+  } else if (Math.abs(x - controls[1].x) < CONTROL_SIZE && Math.abs(y - controls[1].y) < CONTROL_SIZE) {
+    return "top-right"; // 右上角
+  } else if (Math.abs(x - controls[2].x) < CONTROL_SIZE && Math.abs(y - controls[2].y) < CONTROL_SIZE) {
+    return "bottom-left"; // 左下角
+  } else if (Math.abs(x - controls[3].x) < CONTROL_SIZE && Math.abs(y - controls[3].y) < CONTROL_SIZE) {
+    return "bottom-right"; // 右下角
+  }
+  return null;
+}
+
+// 调整对象大小
+function resizeObject(x, y, object, direction) {
+  if (direction === "top-left") {
+    object.width += object.x - x;
+    object.height += object.y - y;
+    object.x = x;
+    object.y = y;
+  } else if (direction === "top-right") {
+    object.width = x - object.x;
+    object.height += object.y - y;
+    object.y = y;
+  } else if (direction === "bottom-left") {
+    object.width += object.x - x;
+    object.height = y - object.y;
+    object.x = x;
+  } else if (direction === "bottom-right") {
+    object.width = x - object.x;
+    object.height = y - object.y;
+  }
+
+  // 防止宽度和高度为负数
+  if (object.width < 20) object.width = 20;
+  if (object.height < 20) object.height = 20;
+}
